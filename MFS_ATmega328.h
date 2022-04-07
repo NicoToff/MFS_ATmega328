@@ -187,7 +187,7 @@ public:
         clear();
     }
     /**
-     * @brief Affiche l'entier passé en argument. Un nombre négatif sera converti en positif.
+     * @brief Affiche l'entier passé en argument. !! Un nombre négatif sera converti en positif.
      */
     void write(long value)
     {
@@ -233,8 +233,8 @@ public:
     void deepSleep()
     {
         disableADC();
-        SMCR |= 0b100; // Sélectionne le "Power-down" mode
-        SMCR |= 1;     // Active la possiblité de recevoir l'instruction "sleep"
+        SMCR = 0b100; // Sélectionne le "Power-down" mode
+        SMCR |= 1;    // Active la possiblité de recevoir l'instruction "sleep"
 
         // MicroController Unit Control Register (MCUCR)
         // La séquence suivante est nécessaire pour arrêter la Brown Out Detection :
@@ -242,17 +242,7 @@ public:
         MCUCR = ((MCUCR & 0b11011111) | 0b01000000); // BODS à 1, BODSE à 0
 
         __asm__ __volatile__("sleep"); // Exécute l'instruction assembleur "sleep"
-    }
-
-    /**
-     * @brief Fonction à appeler pour bonne pratique après un deepSleep() ; idéal dans l'ISR(PCINT1_vect)
-     */
-    void wakeUp()
-    {
-        SMCR = 0;
-        /* ATmega328P [DATASHEET] p38 :
-            "...it is recommended to clear [the sleep enable (SE)] immediately after waking up."
-        */
+        SMCR = 0;                      // RÀZ du mode et du flag après réveil
     }
 
 private:
