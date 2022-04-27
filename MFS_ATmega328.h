@@ -15,8 +15,11 @@
 #define LED_2 0b10000  // pin12
 #define LED_3 0b1000   // pin11
 #define LED_4 0b100    // pin10
-#define ALL_LEDS_ON 0b0
-#define ALL_LEDS_OFF 0b111100
+#define ALL_LEDS 0b111100
+
+/* ON and OFF */
+#define ON 1
+#define OFF 0
 
 /* Constantes pour les états des LEDs */
 #define LED_OFF 0
@@ -33,6 +36,8 @@
 
 /* Définition de caractères spéciaux */
 #define __underscore 0b11110111
+#define __minus 0b10111111
+#define __dot 0b01111111
 #define __space 0b11111111
 
 /** DÉPRÉCIÉ ! Utiliser DIGIT[] ou ALPHA[] pour les caractères.
@@ -106,7 +111,7 @@ public:
             pin8  = DATA  <- bit0
         */
         DDRB |= (LED_1 | LED_2 | LED_3 | LED_4 | DATA); // Mise à 1 des bits pour "OUTPUT"
-        setLEDs(ALL_LEDS_OFF);
+        setLEDs(ALL_LEDS, OFF);
         clear();
 
         /* Registre C (PORTC) === "Groupe 1" :
@@ -123,19 +128,23 @@ public:
     /**
      * @brief Manipule directement le registre PORTB. Utilisez les constantes pour plus de facilité.
      *
-     * @param state Ex. arg. valides : (ALL_LEDS_ON) (~LED_1) (~(LED_2 | LED_4)) ...
+     * @param leds Ex. arg. valides : (ALL_LEDS) (LED_1) (LED_2 | LED_4) (LED_2 + LED_4) ...
+     * @param state ON or OFF
      * @return L'état de PORTB, qui devrait être égal au byte passé
      */
-    byte setLEDs(byte state)
+    byte setLEDs(byte leds, byte state)
     {
-        return PORTB = state;
+        if (state)
+            return PORTB &= (byte)~leds;
+        else
+            return PORTB |= leds;
     }
 
     //----------------------------------------------------------------------------------------------------
     // GESTION DES INTERRUPTIONS
     //----------------------------------------------------------------------------------------------------
     /**
-     * @brief Set les boutons qui pourront faire des interrupts avec ISR(PCINT1_vect)
+     * @brief Configure les boutons du MFC qui pourront déclencher des interrupts et exécuter ISR(PCINT1_vect){}
      * @param button Ex. arg. valides : (BTN_1) (BTN_2 + BTN_3) (BTN_1 | BTN_3) ...
      */
     void attachButtonInterrupt(byte button)
@@ -173,6 +182,7 @@ public:
     }
     /**
      * @brief Affiche un tableau de 4 bytes passés en argument.
+     * @param toPrint Un tableau de 4 bytes (pas moins !)
      */
     void write(byte toPrint[])
     {
@@ -187,7 +197,7 @@ public:
         clear();
     }
     /**
-     * @brief Affiche l'entier passé en argument. !! Un nombre négatif sera converti en positif.
+     * @brief Affiche l'entier passé en argument. Attentions, un nombre négatif sera converti en positif.
      */
     void write(long value)
     {
